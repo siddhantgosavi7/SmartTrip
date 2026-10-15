@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Smart Trip Capture - Intelligent offline-first itinerary planner, route calculator, multi-stop logger, and expense tracker.">
+  <meta name="theme-color" content="#0f172a">
+
+  <title>Smart Trip Capture • Intelligent Itinerary & Expense Planner</title>
+
+  <!-- PWA Manifest & Favicon -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icons/favicon.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <!-- Typography: Outfit & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Ambient Background Lighting -->
+  <div class="bg-ambient-blob blob-1"></div>
+  <div class="bg-ambient-blob blob-2"></div>
+
+  <!-- Header & Navigation -->
+  <header class="app-header">
+    <div class="header-container">
+      <a href="#" class="brand-section">
+        <div class="brand-logo-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Smart Trip</h1>
+          <span>Capture &amp; Itinerary</span>
+        </div>
+      </a>
+
+      <!-- Navigation Tabs -->
+      <nav class="header-nav" role="tablist">
+        <button type="button" class="nav-tab-btn active" data-view="capture-view" id="tab-capture">
+          <span>📝 Plan &amp; Capture</span>
+        </button>
+        <button type="button" class="nav-tab-btn" data-view="records-view" id="tab-records">
+          <span>🗂️ Trip Records</span>
+          <span class="nav-badge-count" id="records-count-badge">0</span>
+        </button>
+        <button type="button" class="nav-tab-btn" data-view="feedback-view" id="tab-feedback">
+          <span>💬 Feedback &amp; Contact</span>
+        </button>
+      </nav>
+
+      <!-- Online / Offline Badge -->
+      <div class="header-actions">
+        <div class="status-badge" id="connection-status-badge">
+          <span class="status-dot"></span>
+          <span id="status-text">Online</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main View Container -->
+  <main class="app-container">
+
+    <!-- ==========================================
+         VIEW 1: PLAN & CAPTURE (Phases 1-6)
+         ========================================== -->
+    <section id="capture-view" class="view-section active">
+      <form id="trip-form">
+        <div class="capture-grid">
+          
+          <!-- LEFT COLUMN: Form Inputs, Stops, Expenses, Photos -->
+          <div class="form-column">
+
+            <!-- Card 1: Trip Basics -->
+            <div class="glass-card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <div class="card-icon">✈️</div>
+                  <h2 class="card-title">Trip Information</h2>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="trip-name-input">Trip Name <span class="required">*</span></label>
+                  <input type="text" id="trip-name-input" class="form-control" placeholder="e.g. Goa Coastal Road Trip" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="trip-datetime-input">Date &amp; Departure Time</label>
+                  <input type="datetime-local" id="trip-datetime-input" class="form-control">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Travel Mode</label>
+                <div class="mode-selector-grid">
+                  <button type="button" class="mode-btn active" data-mode="driving">
+                    <span class="mode-icon">🚗</span>
+                    <span class="mode-label">Driving</span>
+                  </button>
+                  <button type="button" class="mode-btn" data-mode="bus">
+                    <span class="mode-icon">🚌</span>
+                    <span class="mode-label">Bus (x1.3)</span>
+                  </button>
+                  <button type="button" class="mode-btn" data-mode="train">
+                    <span class="mode-icon">🚆</span>
+                    <span class="mode-label">Train (60km/h)</span>
+                  </button>
+                  <button type="button" class="mode-btn" data-mode="flight">
+                    <span class="mode-icon">✈️</span>
+                    <span class="mode-label">Flight</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="trip-purpose-input">Purpose</label>
+                  <select id="trip-purpose-input" class="form-control">
+                    <option value="Vacation">Vacation / Holiday</option>
+                    <option value="Business">Business / Work</option>
+                    <option value="Road Trip">Road Trip / Adventure</option>
+                    <option value="Weekend Getaway">Weekend Getaway</option>
+                    <option value="Commute">Regular Commute</option>
+                    <option value="Family">Family Visit</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="trip-notes-input">Trip Notes</label>
+                  <textarea id="trip-notes-input" class="form-control" rows="1" placeholder="Packing list, hotel booking info, reminders..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Origin & Destination (Phase 3) -->
+            <div class="glass-card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <div class="card-icon">📍</div>
+                  <h2 class="card-title">Origin &amp; Destination</h2>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="start-location-input">Start Location (Origin) <span class="required">*</span></label>
+                <div class="location-input-wrap">
+                  <div class="location-input-field">
+                    <input type="text" id="start-location-input" class="form-control" placeholder="Type city, address or landmark..." required autocomplete="off">
+                    <div id="start-autocomplete" class="autocomplete-dropdown"></div>
+                  </div>
+                  <button type="button" id="start-gps-btn" class="btn-gps" title="Capture GPS coordinates">
+                    <span>📍 GPS</span>
+                  </button>
+                </div>
+                <div id="start-coord-indicator" class="coord-indicator missing">⚠️ No coordinates set</div>
+              </div>
+
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="dest-location-input">Destination Location <span class="required">*</span></label>
+                <div class="location-input-wrap">
+                  <div class="location-input-field">
+                    <input type="text" id="dest-location-input" class="form-control" placeholder="Type destination city, address or airport..." required autocomplete="off">
+                    <div id="dest-autocomplete" class="autocomplete-dropdown"></div>
+                  </div>
+                  <button type="button" id="dest-gps-btn" class="btn-gps" title="Capture GPS coordinates">
+                    <span>📍 GPS</span>
+                  </button>
+                </div>
+                <div id="dest-coord-indicator" class="coord-indicator missing">⚠️ No coordinates set</div>
+              </div>
+            </div>
+
+            <!-- Card 3: Multi-Stops & Waypoints (Phase 5) -->
+            <div class="glass-card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <div class="card-icon">🛑</div>
+                  <h2 class="card-title">Itinerary Stops &amp; Detours</h2>
+                </div>
+                <button type="button" id="btn-add-stop" class="btn btn-outline-amber" style="padding:0.35rem 0.8rem; font-size:0.8rem;">
+                  + Add Stop
+                </button>
+              </div>
+
+              <div id="stops-list" class="stops-list">
+                <!-- Dynamically populated stop cards -->
+              </div>
+            </div>
+
+            <!-- Card 4: Trip Expenses (Phase 6) -->
+            <div class="glass-card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <div class="card-icon">💰</div>
+                  <h2 class="card-title">Trip Expenses (₹)</h2>
+                </div>
+                <button type="button" id="btn-add-trip-expense" class="btn btn-secondary" style="padding:0.35rem 0.8rem; font-size:0.8rem;">
+                  + Add Row
+                </button>
+              </div>
+
+              <div id="trip-expense-rows" class="expense-rows-container">
+                <!-- Dynamic expense rows -->
+              </div>
+
+              <div class="live-total-expense-card">
+                <span class="live-total-label">Computed Total Expenses:</span>
+                <span id="live-total-expense" class="live-total-value">₹ 0</span>
+              </div>
+            </div>
+
+            <!-- Card 5: Trip Photos (Phase 2) -->
+            <div class="glass-card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <div class="card-icon">📷</div>
+                  <h2 class="card-title">Trip Photos &amp; Receipts</h2>
+                </div>
+              </div>
+
+              <label class="photo-uploader-box" for="trip-photo-input">
+                <span class="photo-uploader-icon">🖼️</span>
+                <span class="photo-uploader-text">Click or drop photos here to attach</span>
+                <span class="photo-uploader-sub">Automatically optimized &amp; resized to 1024px JPEG stored in IndexedDB</span>
+                <input type="file" id="trip-photo-input" accept="image/*" multiple style="display:none;">
+              </label>
+
+              <div id="trip-photo-preview-grid" class="photo-preview-grid">
+                <!-- Photos preview thumbnails -->
+              </div>
+            </div>
+
+            <!-- Actions Bar -->
+            <div class="form-action-bar">
+              <button type="submit" id="btn-save-trip" class="btn btn-primary btn-lg" style="flex:2;">
+                💾 Save Trip to Records
+              </button>
+              <button type="button" id="btn-reset-trip" class="btn btn-secondary btn-lg" style="flex:1;">
+                Clear Form
+              </button>
+            </div>
+
+          </div>
+
+          <!-- RIGHT COLUMN: Sticky Map, Alternative Routes & Live Metrics -->
+          <div class="sticky-map-column">
+            <div class="map-container-wrap">
+              <div id="map"></div>
+            </div>
+
+            <!-- Route Alternatives Selection Bar -->
+            <div id="route-alternatives-strip" class="route-alternatives-strip">
+              <!-- Rendered when OSRM returns alternative routes -->
+            </div>
+
+            <!-- Live Route Metrics -->
+            <div class="glass-card" style="margin-bottom:0;">
+              <div class="trip-metrics-grid">
+                <div class="metric-card">
+                  <div class="metric-title">Total Distance</div>
+                  <div id="summary-distance" class="metric-value">0 km</div>
+                  <div class="metric-sub">Geodesic / Road</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-title">Est. Duration</div>
+                  <div id="summary-duration" class="metric-value">0 min</div>
+                  <div class="metric-sub">Mode Adjusted</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-title">Total Cost</div>
+                  <div id="summary-total-expense" class="metric-value" style="color:var(--accent-emerald);">₹ 0</div>
+                  <div class="metric-sub"><span id="summary-stops-count">0</span> stops included</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </form>
+    </section>
+
+    <!-- ==========================================
+         VIEW 2: TRIP RECORDS (Phase 7)
+         ========================================== -->
+    <section id="records-view" class="view-section">
+      <div class="records-toolbar">
+        <div class="records-filter-group">
+          <div class="search-input-wrap">
+            <input type="text" id="records-search-input" class="form-control" placeholder="Search trips by name, destination, stops, notes...">
+          </div>
+          <select id="records-mode-filter" class="form-control" style="width:140px;">
+            <option value="all">All Modes</option>
+            <option value="driving">🚗 Driving</option>
+            <option value="bus">🚌 Bus</option>
+            <option value="train">🚆 Train</option>
+            <option value="flight">✈️ Flight</option>
+          </select>
+          <select id="records-sort-select" class="form-control" style="width:150px;">
+            <option value="newest">Sort: Newest</option>
+            <option value="oldest">Sort: Oldest</option>
+            <option value="expense">Sort: Expense</option>
+            <option value="distance">Sort: Distance</option>
+          </select>
+        </div>
+
+        <div class="records-action-buttons">
+          <label class="btn btn-secondary" style="cursor:pointer;" title="Import previously exported trip JSON">
+            📥 Import JSON
+            <input type="file" id="import-file-input" accept=".json" style="display:none;">
+          </label>
+          <button type="button" id="btn-export-all" class="btn btn-secondary" title="Export all trips with Base64 photos">
+            💾 Export All JSON
+          </button>
+        </div>
+      </div>
+
+      <!-- Trips Cards Grid -->
+      <div id="records-cards-grid" class="trips-cards-grid">
+        <!-- Rendered trip cards -->
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 3: FEEDBACK & CONTACT (Phase 8)
+         ========================================== -->
+    <section id="feedback-view" class="view-section">
+      <div class="feedback-grid">
+        
+        <!-- Left: Feedback Form -->
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon">💌</div>
+              <h2 class="card-title">Send Feedback &amp; Suggestions</h2>
+            </div>
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.25rem;">
+            Have an idea for Smart Trip? Found a bug? Let us know! Your feedback is stored in your device and opens your email with pre-filled details.
+          </p>
+
+          <form id="feedback-form">
+            <!-- 5-Star Interactive Rating -->
+            <div class="form-group">
+              <label class="form-label">Rate Your Experience</label>
+              <div class="star-rating-wrap" id="star-rating-box">
+                <button type="button" class="star-btn active" data-rating="1">★</button>
+                <button type="button" class="star-btn active" data-rating="2">★</button>
+                <button type="button" class="star-btn active" data-rating="3">★</button>
+                <button type="button" class="star-btn active" data-rating="4">★</button>
+                <button type="button" class="star-btn active" data-rating="5">★</button>
+              </div>
+            </div>
+
+            <!-- Category Pills -->
+            <div class="form-group">
+              <label class="form-label">Category</label>
+              <div class="category-pills">
+                <button type="button" class="category-pill active" data-category="Bug">🐞 Bug Report</button>
+                <button type="button" class="category-pill" data-category="Idea">💡 Feature Idea</button>
+                <button type="button" class="category-pill" data-category="Other">✨ Other</button>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="fb-name">Your Name (Optional)</label>
+                <input type="text" id="fb-name" class="form-control" placeholder="e.g. John Doe">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="fb-email">Your Email (Optional)</label>
+                <input type="email" id="fb-email" class="form-control" placeholder="name@example.com">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="fb-message">Message <span class="required">*</span></label>
+              <textarea id="fb-message" class="form-control" rows="4" maxlength="1000" placeholder="Tell us what you liked or what needs improvement..." required></textarea>
+              <div id="fb-char-count" class="char-counter">0 / 1000</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg btn-block" style="margin-top:0.75rem;">
+              🚀 Submit Feedback via Email
+            </button>
+          </form>
+        </div>
+
+        <!-- Right: Direct Developer Contact Details -->
+        <div>
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="card-icon">📞</div>
+                <h2 class="card-title">Direct Contact</h2>
+              </div>
+            </div>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.25rem;">
+              For inquiries, feedback, or collaborations, feel free to reach out directly:
+            </p>
+
+            <a href="tel:+919270103581" class="contact-card-box">
+              <div class="contact-icon-circle">📱</div>
+              <div>
+                <div class="contact-card-title">Phone Number</div>
+                <div class="contact-card-value">+91 9270103581</div>
+              </div>
+            </a>
+
+            <a href="mailto:mdanishb03@gmail.com" class="contact-card-box">
+              <div class="contact-icon-circle">✉️</div>
+              <div>
+                <div class="contact-card-title">Email Address</div>
+                <div class="contact-card-value">mdanishb03@gmail.com</div>
+              </div>
+            </a>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="card-icon">⚡</div>
+                <h2 class="card-title">PWA &amp; Architecture</h2>
+              </div>
+            </div>
+            <ul style="font-size:0.82rem; color:var(--text-muted); line-height:1.7; padding-left:1.2rem;">
+              <li><strong>IndexedDB:</strong> Persistent local storage without 5MB limits.</li>
+              <li><strong>Canvas Compression:</strong> Photos auto-scaled to 1024px JPEG blobs.</li>
+              <li><strong>OSRM &amp; Leaflet:</strong> Dynamic routing with travel mode factor adjustments.</li>
+              <li><strong>Service Worker:</strong> Cache-first app shell for fast loading and offline resilience.</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================
+       TRIP DETAIL MODAL (Phase 7)
+       ========================================== -->
+  <div id="detail-modal-overlay" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Trip Overview</h3>
+        <button type="button" id="btn-close-detail-modal" class="modal-close-btn">&times;</button>
+      </div>
+      <div id="detail-modal-body">
+        <!-- Rendered detail content -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Application Modules -->
+  <script src="js/db.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
