@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const tripMap = new SmartTripMap('map');
   tripMap.init();
 
+  // Active user session state
+  let currentUser = await window.smartTripDB.getCurrentSession();
+
   // Active state for current trip
   let currentTrip = {
     id: null,
@@ -763,6 +766,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Prepare full trip record
     const tripToSave = {
       id: currentTrip.id || `trip_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      userId: currentUser ? currentUser.email : null,
       name: name,
       datetime: tripDatetimeInput.value || new Date().toISOString(),
       mode: currentTrip.mode,
@@ -863,13 +867,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   let allSavedTrips = [];
 
   async function updateTripCountBadge() {
-    const trips = await window.smartTripDB.getAllTrips();
+    const trips = await window.smartTripDB.getAllTrips(currentUser ? currentUser.email : null);
     tripCountBadge.textContent = trips.length;
   }
   updateTripCountBadge();
 
   async function loadAndRenderRecords() {
-    allSavedTrips = await window.smartTripDB.getAllTrips();
+    allSavedTrips = await window.smartTripDB.getAllTrips(currentUser ? currentUser.email : null);
     updateTripCountBadge();
     filterAndRenderRecords();
   }
@@ -1433,6 +1437,274 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
       console.error('Error saving feedback:', err);
       showToast('Error saving feedback to database.', 'error');
+    }
+  });
+
+  // ----------------------------------------------------
+  // 13. User Accounts, Authentication & Profile Management
+  // ----------------------------------------------------
+  const btnOpenAuth = document.getElementById('btn-open-auth');
+  const userProfileWidget = document.getElementById('user-profile-widget');
+  const userAvatarDisplay = document.getElementById('user-avatar-display');
+  const userNameDisplay = document.getElementById('user-name-display');
+  const userDropdownMenu = document.getElementById('user-dropdown-menu');
+  const menuBtnProfile = document.getElementById('menu-btn-profile');
+  const menuBtnMyTrips = document.getElementById('menu-btn-my-trips');
+  const menuBtnLogout = document.getElementById('menu-btn-logout');
+
+  const authModalOverlay = document.getElementById('auth-modal-overlay');
+  const btnCloseAuthModal = document.getElementById('btn-close-auth-modal');
+  const tabBtnSignup = document.getElementById('tab-btn-signup');
+  const tabBtnSignin = document.getElementById('tab-btn-signin');
+  const authModalTitle = document.getElementById('auth-modal-title');
+  const authAlertBox = document.getElementById('auth-alert-box');
+  const formSignup = document.getElementById('form-signup');
+  const formSignin = document.getElementById('form-signin');
+
+  const profileModalOverlay = document.getElementById('profile-modal-overlay');
+  const btnCloseProfileModal = document.getElementById('btn-close-profile-modal');
+  const formEditProfile = document.getElementById('form-edit-profile');
+  const btnProfileLogout = document.getElementById('btn-profile-logout');
+
+  let selectedSignupAvatar = '✈️';
+  let selectedProfileAvatar = '✈️';
+
+  function updateUserUI() {
+    if (currentUser) {
+      btnOpenAuth.style.display = 'none';
+      userProfileWidget.style.display = 'flex';
+      userAvatarDisplay.textContent = currentUser.avatar || '👤';
+      userNameDisplay.textContent = currentUser.name || 'Traveler';
+    } else {
+      btnOpenAuth.style.display = 'inline-flex';
+      userProfileWidget.style.display = 'none';
+      userDropdownMenu.classList.remove('show');
+    }
+    updateTripCountBadge();
+  }
+  updateUserUI();
+
+  // Toggle user dropdown menu
+  userProfileWidget.addEventListener('click', (e) => {
+    e.stopPropagation();
+    userDropdownMenu.classList.toggle('show');
+  });
+
+  document.addEventListener('click', () => {
+    userDropdownMenu.classList.remove('show');
+  });
+
+  menuBtnProfile.addEventListener('click', () => {
+    userDropdownMenu.classList.remove('show');
+    openProfileModal();
+  });
+
+  menuBtnMyTrips.addEventListener('click', () => {
+    userDropdownMenu.classList.remove('show');
+    document.querySelector('[data-view="records-view"]').click();
+  });
+
+  menuBtnLogout.addEventListener('click', () => {
+    handleSignOut();
+  });
+
+  // Auth Modal Opening & Closing
+  btnOpenAuth.addEventListener('click', () => {
+    showAuthModal('signup');
+  });
+
+  btnCloseAuthModal.addEventListener('click', () => {
+    authModalOverlay.classList.remove('open');
+  });
+
+  authModalOverlay.addEventListener('click', (e) => {
+    if (e.target === authModalOverlay) {
+      authModalOverlay.classList.remove('open');
+    }
+  });
+
+  function showAuthAlert(msg, type = 'error') {
+    authAlertBox.className = `auth-alert show ${type}`;
+    authAlertBox.textContent = msg;
+  }
+
+  function hideAuthAlert() {
+    authAlertBox.className = 'auth-alert';
+    authAlertBox.textContent = '';
+  }
+
+  function showAuthModal(tab = 'signup') {
+    hideAuthAlert();
+    authModalOverlay.classList.add('open');
+    if (tab === 'signup') {
+      tabBtnSignup.classList.add('active');
+      tabBtnSignin.classList.remove('active');
+      formSignup.style.display = 'block';
+      formSignin.style.display = 'none';
+      authModalTitle.textContent = 'Create an Account';
+    } else {
+      tabBtnSignin.classList.add('active');
+      tabBtnSignup.classList.remove('active');
+      formSignin.style.display = 'block';
+      formSignup.style.display = 'none';
+      authModalTitle.textContent = 'Sign In';
+    }
+  }
+
+  tabBtnSignup.addEventListener('click', () => showAuthModal('signup'));
+  tabBtnSignin.addEventListener('click', () => showAuthModal('signin'));
+
+  // Avatar Selection in Sign Up
+  const signupAvatarButtons = document.querySelectorAll('#signup-avatar-grid .avatar-opt-btn');
+  signupAvatarButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      signupAvatarButtons.forEach((b) => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedSignupAvatar = btn.dataset.avatar;
+    });
+  });
+
+  // Submit Sign Up Form
+  formSignup.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideAuthAlert();
+
+    const name = document.getElementById('signup-name').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const confirmPass = document.getElementById('signup-password-confirm').value;
+    const bio = document.getElementById('signup-bio').value.trim();
+
+    if (password !== confirmPass) {
+      showAuthAlert('Passwords do not match. Please verify.');
+      return;
+    }
+
+    try {
+      const newUser = await window.smartTripDB.registerUser({
+        name,
+        email,
+        password,
+        avatar: selectedSignupAvatar,
+        bio
+      });
+      currentUser = newUser;
+      updateUserUI();
+      authModalOverlay.classList.remove('open');
+      showToast(`Welcome to Smart Trip, ${newUser.name}! Your account is ready.`, 'success');
+      loadAndRenderRecords();
+    } catch (err) {
+      showAuthAlert(err.message || 'Registration failed. Please try again.');
+    }
+  });
+
+  // Submit Sign In Form
+  formSignin.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideAuthAlert();
+
+    const email = document.getElementById('signin-email').value.trim();
+    const password = document.getElementById('signin-password').value;
+
+    try {
+      const user = await window.smartTripDB.authenticateUser(email, password);
+      currentUser = user;
+      updateUserUI();
+      authModalOverlay.classList.remove('open');
+      showToast(`Welcome back, ${user.name}!`, 'success');
+      loadAndRenderRecords();
+    } catch (err) {
+      showAuthAlert(err.message || 'Authentication failed. Please check credentials.');
+    }
+  });
+
+  // Sign Out Handler
+  async function handleSignOut() {
+    if (confirm('Are you sure you want to sign out?')) {
+      await window.smartTripDB.clearCurrentSession();
+      currentUser = null;
+      updateUserUI();
+      profileModalOverlay.classList.remove('open');
+      userDropdownMenu.classList.remove('show');
+      showToast('Signed out successfully.', 'info');
+      loadAndRenderRecords();
+    }
+  }
+
+  // Profile Modal & Stats
+  async function openProfileModal() {
+    if (!currentUser) return;
+
+    // Load user trips for stats
+    const userTrips = await window.smartTripDB.getAllTrips(currentUser.email);
+    let totalDist = 0;
+    let totalSpent = 0;
+
+    userTrips.forEach((t) => {
+      totalDist += t.route?.distance || 0;
+      totalSpent += calculateTotalExpense(t);
+    });
+
+    document.getElementById('profile-avatar-large').textContent = currentUser.avatar || '👤';
+    document.getElementById('profile-name-header').textContent = currentUser.name || 'Traveler';
+    document.getElementById('profile-email-header').textContent = currentUser.email || '';
+    const joinedYear = currentUser.createdAt ? new Date(currentUser.createdAt).getFullYear() : '2026';
+    document.getElementById('profile-joined-header').textContent = `Member since ${joinedYear}`;
+
+    document.getElementById('profile-stats-trips').textContent = userTrips.length;
+    document.getElementById('profile-stats-dist').textContent = formatDistance(totalDist);
+    document.getElementById('profile-stats-spent').textContent = formatCurrency(totalSpent);
+
+    document.getElementById('profile-edit-name').value = currentUser.name || '';
+    document.getElementById('profile-edit-bio').value = currentUser.bio || '';
+
+    // Set active avatar in profile modal
+    selectedProfileAvatar = currentUser.avatar || '✈️';
+    const profileAvatarButtons = document.querySelectorAll('#profile-avatar-grid .avatar-opt-btn');
+    profileAvatarButtons.forEach((btn) => {
+      btn.classList.toggle('selected', btn.dataset.avatar === selectedProfileAvatar);
+      btn.onclick = () => {
+        profileAvatarButtons.forEach((b) => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedProfileAvatar = btn.dataset.avatar;
+      };
+    });
+
+    profileModalOverlay.classList.add('open');
+  }
+
+  btnCloseProfileModal.addEventListener('click', () => {
+    profileModalOverlay.classList.remove('open');
+  });
+
+  profileModalOverlay.addEventListener('click', (e) => {
+    if (e.target === profileModalOverlay) {
+      profileModalOverlay.classList.remove('open');
+    }
+  });
+
+  btnProfileLogout.addEventListener('click', handleSignOut);
+
+  // Edit Profile Submit
+  formEditProfile.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentUser) return;
+
+    const newName = document.getElementById('profile-edit-name').value.trim();
+    const newBio = document.getElementById('profile-edit-bio').value.trim();
+
+    try {
+      const updated = await window.smartTripDB.updateUserProfile(currentUser.email, {
+        name: newName,
+        bio: newBio,
+        avatar: selectedProfileAvatar
+      });
+      currentUser = updated;
+      updateUserUI();
+      profileModalOverlay.classList.remove('open');
+      showToast('Profile updated successfully!', 'success');
+    } catch (err) {
+      showToast('Failed to update profile.', 'error');
     }
   });
 

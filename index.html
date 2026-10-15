@@ -59,11 +59,40 @@
         </button>
       </nav>
 
-      <!-- Online / Offline Badge -->
+      <!-- Online / Offline Badge & User Account Widget -->
       <div class="header-actions">
         <div class="status-badge" id="connection-status-badge">
           <span class="status-dot"></span>
           <span id="status-text">Online</span>
+        </div>
+
+        <!-- User Account Container -->
+        <div class="user-account-wrap" id="user-account-wrap">
+          <!-- Logged Out State -->
+          <button type="button" class="btn-auth-trigger" id="btn-open-auth">
+            <span>👤 Sign In / Register</span>
+          </button>
+
+          <!-- Logged In State (Hidden by default) -->
+          <div class="user-profile-widget" id="user-profile-widget" style="display:none;">
+            <div class="user-avatar-badge" id="user-avatar-display">👤</div>
+            <span class="user-name-display" id="user-name-display">Traveler</span>
+            <span class="user-dropdown-caret">▼</span>
+
+            <!-- Dropdown Menu -->
+            <div class="user-dropdown-menu" id="user-dropdown-menu">
+              <button type="button" class="dropdown-item" id="menu-btn-profile">
+                <span>👤 Profile &amp; Stats</span>
+              </button>
+              <button type="button" class="dropdown-item" id="menu-btn-my-trips">
+                <span>🗂️ My Trips</span>
+              </button>
+              <div class="dropdown-divider"></div>
+              <button type="button" class="dropdown-item danger" id="menu-btn-logout">
+                <span>🚪 Sign Out</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -462,6 +491,170 @@
       <div id="detail-modal-body">
         <!-- Rendered detail content -->
       </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       USER AUTHENTICATION MODAL
+       ========================================== -->
+  <div id="auth-modal-overlay" class="modal-overlay">
+    <div class="modal-dialog" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="auth-modal-title">Create an Account</h3>
+        <button type="button" id="btn-close-auth-modal" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="auth-tab-switch">
+        <button type="button" class="auth-tab-btn active" id="tab-btn-signup">Create Account</button>
+        <button type="button" class="auth-tab-btn" id="tab-btn-signin">Sign In</button>
+      </div>
+
+      <!-- Alert Message Box -->
+      <div id="auth-alert-box" class="auth-alert"></div>
+
+      <!-- Sign Up Form -->
+      <form id="form-signup">
+        <div class="form-group">
+          <label class="form-label" for="signup-name">Full Name <span class="required">*</span></label>
+          <input type="text" id="signup-name" class="form-control" placeholder="e.g. Maya Sharma" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="signup-email">Email Address <span class="required">*</span></label>
+          <input type="email" id="signup-email" class="form-control" placeholder="maya@example.com" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="signup-password">Password <span class="required">*</span></label>
+            <input type="password" id="signup-password" class="form-control" placeholder="Min 6 characters" minlength="6" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="signup-password-confirm">Confirm Password <span class="required">*</span></label>
+            <input type="password" id="signup-password-confirm" class="form-control" placeholder="Repeat password" minlength="6" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Choose Traveler Avatar</label>
+          <div class="avatar-picker-grid" id="signup-avatar-grid">
+            <button type="button" class="avatar-opt-btn selected" data-avatar="✈️">✈️</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🧳">🧳</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🗺️">🗺️</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🏕️">🏕️</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🚗">🚗</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🛳️">🛳️</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🧗">🧗</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🎒">🎒</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🏄">🏄</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🚀">🚀</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="👤">👤</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🏖️">🏖️</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="signup-bio">Bio / Travel Motto (Optional)</label>
+          <input type="text" id="signup-bio" class="form-control" placeholder="Exploring one road at a time...">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1rem;">
+          ✨ Create My Account
+        </button>
+      </form>
+
+      <!-- Sign In Form -->
+      <form id="form-signin" style="display: none;">
+        <div class="form-group">
+          <label class="form-label" for="signin-email">Email Address <span class="required">*</span></label>
+          <input type="email" id="signin-email" class="form-control" placeholder="maya@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="signin-password">Password <span class="required">*</span></label>
+          <input type="password" id="signin-password" class="form-control" placeholder="Enter your password" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1.25rem;">
+          🔑 Sign In to Smart Trip
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       USER PROFILE & STATS MODAL
+       ========================================== -->
+  <div id="profile-modal-overlay" class="modal-overlay">
+    <div class="modal-dialog" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Traveler Profile</h3>
+        <button type="button" id="btn-close-profile-modal" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem;">
+        <div class="user-avatar-badge" id="profile-avatar-large" style="width:56px; height:56px; font-size:1.8rem;">👤</div>
+        <div>
+          <h2 id="profile-name-header" style="font-family:var(--font-heading); font-size:1.35rem; color:#ffffff;">Traveler</h2>
+          <span id="profile-email-header" style="font-size:0.82rem; color:var(--text-dim);">user@example.com</span>
+          <div id="profile-joined-header" style="font-size:0.75rem; color:var(--accent-cyan); margin-top:0.2rem;">Member since 2026</div>
+        </div>
+      </div>
+
+      <!-- User Stats Grid -->
+      <div class="trip-metrics-grid" style="margin-bottom:1.25rem;">
+        <div class="metric-card">
+          <div class="metric-title">Trips Planned</div>
+          <div id="profile-stats-trips" class="metric-value">0</div>
+          <div class="metric-sub">Adventures</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-title">Total Distance</div>
+          <div id="profile-stats-dist" class="metric-value">0 km</div>
+          <div class="metric-sub">Logged</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-title">Total Spent</div>
+          <div id="profile-stats-spent" class="metric-value" style="color:var(--accent-emerald);">₹ 0</div>
+          <div class="metric-sub">All Trips</div>
+        </div>
+      </div>
+
+      <!-- Edit Profile Section -->
+      <form id="form-edit-profile">
+        <div class="form-group">
+          <label class="form-label" for="profile-edit-name">Display Name</label>
+          <input type="text" id="profile-edit-name" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="profile-edit-bio">Bio / Status</label>
+          <input type="text" id="profile-edit-bio" class="form-control" placeholder="Add your favorite travel quote">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Change Avatar</label>
+          <div class="avatar-picker-grid" id="profile-avatar-grid">
+            <button type="button" class="avatar-opt-btn" data-avatar="✈️">✈️</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🧳">🧳</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🗺️">🗺️</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🏕️">🏕️</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🚗">🚗</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🛳️">🛳️</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🧗">🧗</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🎒">🎒</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🏄">🏄</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🚀">🚀</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="👤">👤</button>
+            <button type="button" class="avatar-opt-btn" data-avatar="🏖️">🏖️</button>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:0.75rem; margin-top:1.25rem;">
+          <button type="submit" class="btn btn-primary" style="flex:1;">Save Profile Changes</button>
+          <button type="button" id="btn-profile-logout" class="btn btn-secondary" style="color:#fb7185; border-color:rgba(244,63,94,0.3);">Sign Out</button>
+        </div>
+      </form>
     </div>
   </div>
 
