@@ -26,16 +26,11 @@ class SmartTripMap {
       attributionControl: false
     }).setView([19.0760, 72.8777], 6);
 
-    // High performance CartoDB Voyager / OSM tile layer
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    // 100% Free OpenStreetMap tile layer - Zero API Key required
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      subdomains: 'abcd'
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
     }).addTo(this.map);
-
-    // Add clean minimal attribution
-    L.control.attribution({ position: 'bottomright' })
-      .addAttribution('&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>')
-      .addTo(this.map);
 
     this.markersGroup = L.featureGroup().addTo(this.map);
     this.routesGroup = L.featureGroup().addTo(this.map);
