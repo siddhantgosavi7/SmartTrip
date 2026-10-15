@@ -1484,6 +1484,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   updateUserUI();
 
+  // Prompt login / signup when a user visits for the first time
+  async function checkFirstTimeVisitor() {
+    if (!currentUser) {
+      const hasVisited = localStorage.getItem('smarttrip_visited_first_time');
+      if (!hasVisited) {
+        localStorage.setItem('smarttrip_visited_first_time', 'true');
+        const allUsers = await window.smartTripDB.getAll('users');
+        const defaultTab = allUsers && allUsers.length > 0 ? 'signin' : 'signup';
+        setTimeout(() => {
+          showAuthModal(defaultTab);
+          showAuthAlert(
+            defaultTab === 'signin'
+              ? '👋 Welcome to Smart Trip! Please sign in to access your saved itineraries.'
+              : '👋 Welcome to Smart Trip! Create a free traveler account to plan and save your trips.',
+            'info'
+          );
+        }, 500);
+      }
+    }
+  }
+  checkFirstTimeVisitor();
+
   // Toggle user dropdown menu
   userProfileWidget.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1516,6 +1538,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   btnCloseAuthModal.addEventListener('click', () => {
     authModalOverlay.classList.remove('open');
   });
+
+  const btnGuestDismiss = document.getElementById('btn-guest-dismiss');
+  if (btnGuestDismiss) {
+    btnGuestDismiss.addEventListener('click', () => {
+      authModalOverlay.classList.remove('open');
+      showToast('Continuing as guest. You can sign in anytime from the top bar.', 'info');
+    });
+  }
 
   authModalOverlay.addEventListener('click', (e) => {
     if (e.target === authModalOverlay) {

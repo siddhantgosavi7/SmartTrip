@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smarttrip-v3';
+const CACHE_NAME = 'smarttrip-v4';
 
 const STATIC_ASSETS = [
   './',
