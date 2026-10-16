@@ -1466,6 +1466,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const formEditProfile = document.getElementById('form-edit-profile');
   const btnProfileLogout = document.getElementById('btn-profile-logout');
 
+  const welcomeAuthBanner = document.getElementById('welcome-auth-banner');
+  const btnBannerLogin = document.getElementById('btn-banner-login');
+  const btnBannerGuest = document.getElementById('btn-banner-guest');
+
   let selectedSignupAvatar = '✈️';
   let selectedProfileAvatar = '✈️';
 
@@ -1475,36 +1479,55 @@ document.addEventListener('DOMContentLoaded', async () => {
       userProfileWidget.style.display = 'flex';
       userAvatarDisplay.textContent = currentUser.avatar || '👤';
       userNameDisplay.textContent = currentUser.name || 'Traveler';
+      if (welcomeAuthBanner) welcomeAuthBanner.style.display = 'none';
     } else {
       btnOpenAuth.style.display = 'inline-flex';
       userProfileWidget.style.display = 'none';
       userDropdownMenu.classList.remove('show');
+      if (welcomeAuthBanner) {
+        const dismissed = sessionStorage.getItem('smarttrip_auth_dismissed');
+        welcomeAuthBanner.style.display = dismissed ? 'none' : 'block';
+      }
     }
     updateTripCountBadge();
   }
   updateUserUI();
 
-  // Prompt login / signup when a user visits for the first time
+  // Prompt login / signup when an unauthenticated user arrives
   async function checkFirstTimeVisitor() {
     if (!currentUser) {
-      const hasVisited = localStorage.getItem('smarttrip_visited_first_time');
-      if (!hasVisited) {
-        localStorage.setItem('smarttrip_visited_first_time', 'true');
+      const dismissed = sessionStorage.getItem('smarttrip_auth_dismissed');
+      if (!dismissed) {
         const allUsers = await window.smartTripDB.getAll('users');
         const defaultTab = allUsers && allUsers.length > 0 ? 'signin' : 'signup';
         setTimeout(() => {
           showAuthModal(defaultTab);
           showAuthAlert(
             defaultTab === 'signin'
-              ? '👋 Welcome to Smart Trip! Please sign in to access your saved itineraries.'
+              ? '👋 Welcome back! Please sign in to access your saved itineraries.'
               : '👋 Welcome to Smart Trip! Create a free traveler account to plan and save your trips.',
             'info'
           );
-        }, 500);
+        }, 400);
       }
     }
   }
   checkFirstTimeVisitor();
+
+  // Banner Actions
+  if (btnBannerLogin) {
+    btnBannerLogin.addEventListener('click', () => {
+      showAuthModal('signup');
+    });
+  }
+
+  if (btnBannerGuest) {
+    btnBannerGuest.addEventListener('click', () => {
+      sessionStorage.setItem('smarttrip_auth_dismissed', 'true');
+      if (welcomeAuthBanner) welcomeAuthBanner.style.display = 'none';
+      showToast('Continuing as guest. You can sign in anytime from the top bar.', 'info');
+    });
+  }
 
   // Toggle user dropdown menu
   userProfileWidget.addEventListener('click', (e) => {
@@ -1542,7 +1565,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnGuestDismiss = document.getElementById('btn-guest-dismiss');
   if (btnGuestDismiss) {
     btnGuestDismiss.addEventListener('click', () => {
+      sessionStorage.setItem('smarttrip_auth_dismissed', 'true');
       authModalOverlay.classList.remove('open');
+      if (welcomeAuthBanner) welcomeAuthBanner.style.display = 'none';
       showToast('Continuing as guest. You can sign in anytime from the top bar.', 'info');
     });
   }
@@ -1571,13 +1596,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       tabBtnSignin.classList.remove('active');
       formSignup.style.display = 'block';
       formSignin.style.display = 'none';
-      authModalTitle.textContent = 'Create an Account';
+      authModalTitle.textContent = '✈️ Traveler Account Portal • Create Account';
     } else {
       tabBtnSignin.classList.add('active');
       tabBtnSignup.classList.remove('active');
       formSignin.style.display = 'block';
       formSignup.style.display = 'none';
-      authModalTitle.textContent = 'Sign In';
+      authModalTitle.textContent = '✈️ Traveler Account Portal • Sign In';
     }
   }
 

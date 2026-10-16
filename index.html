@@ -105,6 +105,24 @@
          VIEW 1: PLAN & CAPTURE (Phases 1-6)
          ========================================== -->
     <section id="capture-view" class="view-section active">
+
+      <!-- Welcome Banner for First-Time / Guest Visitors -->
+      <div id="welcome-auth-banner" class="welcome-auth-banner">
+        <div class="welcome-banner-badge">✨ Traveler Account Portal</div>
+        <h2 class="welcome-banner-title">Welcome to Smart Trip Capture! 🌍</h2>
+        <p class="welcome-banner-desc">
+          Plan multi-stop itineraries, calculate mode-adjusted travel times, track expenses in ₹, and store high-resolution photos without storage limits. Sign in or create an account to persist your journeys.
+        </p>
+        <div class="welcome-banner-actions">
+          <button type="button" class="btn btn-primary btn-lg" id="btn-banner-login">
+            <span>🔑 Sign In / Create Account</span>
+          </button>
+          <button type="button" class="btn btn-secondary btn-lg" id="btn-banner-guest">
+            <span>👀 Continue as Guest</span>
+          </button>
+        </div>
+      </div>
+
       <form id="trip-form">
         <div class="capture-grid">
           
@@ -500,13 +518,13 @@
   <div id="auth-modal-overlay" class="modal-overlay">
     <div class="modal-dialog" style="max-width: 480px;">
       <div class="modal-header">
-        <h3 class="modal-title" id="auth-modal-title">Create an Account</h3>
+        <h3 class="modal-title" id="auth-modal-title">✈️ Traveler Account Portal</h3>
         <button type="button" id="btn-close-auth-modal" class="modal-close-btn">&times;</button>
       </div>
 
       <div class="auth-tab-switch">
-        <button type="button" class="auth-tab-btn active" id="tab-btn-signup">Create Account</button>
-        <button type="button" class="auth-tab-btn" id="tab-btn-signin">Sign In</button>
+        <button type="button" class="auth-tab-btn active" id="tab-btn-signup">✨ Create Account</button>
+        <button type="button" class="auth-tab-btn" id="tab-btn-signin">🔑 Sign In</button>
       </div>
 
       <!-- Alert Message Box -->
